@@ -4,275 +4,279 @@
 
 @section('styles')
 <style>
-    .command-center { display: flex; flex-direction: column; gap: 4rem; }
-    
-    /* Lifecycle Header */
-    .lifecycle-container {
-        background: var(--bg-white);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 32px;
-        padding: 3rem;
-        box-shadow: var(--shadow-soft);
-        position: relative;
+    /* Dynamic Mesh Background */
+    .mesh-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
         overflow: hidden;
-        backdrop-filter: blur(10px);
-        transition: var(--transition-standard);
+        background-color: #f8fafc;
+        pointer-events: none;
     }
-    .lifecycle-container:hover {
-        box-shadow: var(--shadow-hover);
-        border-color: rgba(16, 185, 129, 0.1);
+    .blob-1 {
+        position: absolute; top: -15%; left: -10%; width: 55vw; height: 55vw;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 70%);
+        filter: blur(80px); animation: float 25s infinite alternate ease-in-out;
+    }
+    .blob-2 {
+        position: absolute; bottom: -20%; right: -10%; width: 65vw; height: 65vw;
+        background: radial-gradient(circle, rgba(6, 95, 70, 0.12) 0%, rgba(6, 95, 70, 0) 70%);
+        filter: blur(100px); animation: float 30s infinite alternate-reverse ease-in-out;
+    }
+    .blob-3 {
+        position: absolute; top: 30%; left: 45%; transform: translate(-50%, -50%); width: 50vw; height: 50vw;
+        background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(167, 243, 208, 0.1) 40%, rgba(167, 243, 208, 0) 70%);
+        filter: blur(90px); animation: float 22s infinite alternate ease-in-out;
+    }
+    @keyframes float {
+        0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+        50% { transform: translate(3%, 5%) scale(1.05) rotate(2deg); }
+        100% { transform: translate(-3%, -2%) scale(0.95) rotate(-2deg); }
     }
 
-    .progress-track-wrapper {
-        margin: 2rem 0;
-        position: relative;
+    /* Glassmorphism Classes */
+    .glass-card-premium {
+        background: #ffffff;
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 8px 30px rgba(16, 185, 129, 0.05);
+        transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-
-    .progress-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 1rem;
+    .concave-box {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
+    .concave-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
+    }
+    .btn-shimmer {
+        position: relative; overflow: hidden;
+    }
+    @keyframes shimmer {
+        0% { transform: translateX(-150%) skewX(-20deg); }
+        100% { transform: translateX(250%) skewX(-20deg); }
+    }
+    .btn-shimmer::after {
+        content: ''; position: absolute; top: 0; left: 0; width: 30%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+        transform: translateX(-150%) skewX(-20deg);
+        animation: shimmer 2.5s ease-in-out infinite;
+    }
+    
+    /* Progress Bar */
     .progress-bar-glass {
         height: 12px;
-        background: var(--bg-soft);
+        background: rgba(255, 255, 255, 0.3);
         border-radius: 50px;
         overflow: hidden;
-        position: relative;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
     }
-
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--primary-emerald), var(--secondary-sage));
+        background: linear-gradient(90deg, #10b981, #34d399);
         border-radius: 50px;
-        transition: width 1s ease-in-out;
-        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
-    }
-
-    /* Phase Milestones */
-    .phase-milestones {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-    .milestone-item {
-        text-align: center;
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--text-muted);
-        position: relative;
-    }
-
-    .milestone-item.active { color: var(--primary-emerald); text-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
-
-    /* Modern Task Timeline */
-    .agronomy-timeline {
-        padding-left: 2rem;
-        border-left: 3px dashed var(--border-soft);
-        margin-top: 3rem;
-        display: flex;
-        flex-direction: column;
-        gap: 2.5rem;
-    }
-
-    .task-card-premium {
-        background: var(--bg-white);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 24px;
-        padding: 2.2rem;
-        transition: var(--transition-standard);
-        position: relative;
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        gap: 2rem;
-        align-items: center;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-    }
-
-    .task-card-premium:hover {
-        transform: translateX(8px);
-        border-color: rgba(16, 185, 129, 0.2);
-        box-shadow: var(--shadow-hover);
-    }
-
-    .category-icon-box {
-        width: 65px;
-        height: 65px;
-        background: var(--bg-white);
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 4px 10px rgba(0,0,0,0.02);
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-    }
-
-    .task-card-premium.overdue { border-color: rgba(239, 68, 68, 0.3); background: #fffafa; }
-    .task-card-premium.completed { opacity: 0.75; transform: none; background: #fafafa; border-color: transparent; }
-
-    .tool-tag {
-        font-size: 0.7rem;
-        background: var(--bg-soft);
-        color: var(--text-slate);
-        padding: 5px 12px;
-        border-radius: 8px;
-        font-weight: 700;
-        border: 1px solid var(--border-soft);
-    }
-
-    .fase-ribbon {
-        position: absolute;
-        top: 0;
-        left: 3rem;
-        background: var(--primary-emerald);
-        color: white;
-        padding: 6px 20px;
-        border-radius: 0 0 15px 15px;
-        font-size: 0.75rem;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
-    }
-
-    /* Overdue Badge */
-    .overdue-alert {
-        color: var(--accent-red);
-        font-weight: 900;
-        font-size: 0.65rem;
-        background: rgba(239, 68, 68, 0.1);
-        padding: 4px 10px;
-        border-radius: 6px;
-        margin-left: 10px;
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
     }
 </style>
 @endsection
 
-@section('content')
-<div class="page-header animate-up">
-    <h1>🧬 Pusat Kendali Agronomi</h1>
-    <p>Algoritma UrbanFarm Master Agronomist telah mensinkronisasi profil pertumbuhan Anda dengan cuaca mikro saat ini.</p>
+@section('background')
+<!-- Mesh Background -->
+<div class="mesh-bg">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+    <div class="blob-3"></div>
 </div>
+@endsection
 
-@if($semuaJadwal->isEmpty())
-    <div class="glass-card animate-up" style="text-align: center; padding: 6rem 1rem;">
-        <i class="fas fa-microchip" style="font-size: 4rem; color: var(--border-soft); margin-bottom: 2rem;"></i>
-        <h2>Belum Ada Ekosistem Aktif</h2>
-        <p>Inisialisasi siklus tanam Anda di dashboard untuk memulai pemantauan presisi.</p>
-        <a href="{{ route('dashboard') }}" class="cyber-btn" style="margin-top: 2rem;">Inisialisasi Sekarang</a>
+@section('content')
+
+<div class="relative z-10 flex flex-col gap-10 pb-16">
+    <!-- Header -->
+    <div class="flex flex-col justify-center items-start animate-slide-up">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight mb-3 flex items-center gap-4">
+            <div class="p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
+                <i data-lucide="dna" class="w-8 h-8 md:w-10 md:h-10 text-emerald-600"></i>
+            </div>
+            Pusat Kendali Agronomi
+        </h1>
+        <p class="text-slate-500 font-medium text-lg max-w-2xl">Algoritma UrbanFarm Master Agronomist telah mensinkronisasi profil pertumbuhan Anda dengan cuaca mikro saat ini.</p>
     </div>
-@else
-    <div class="command-center">
-        @foreach($semuaJadwal as $j)
-        <section class="lifecycle-container animate-up">
-            <!-- Header Section -->
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--text-slate); letter-spacing: -1px;">{{ $j->nama_tanaman }}</h2>
-                    <p style="color: var(--text-muted); font-size: 1rem; font-weight: 500;">
-                        <i class="fas fa-location-dot" style="color: var(--primary-emerald); margin-right: 6px;"></i> {{ $j->nama_lahan }}
-                    </p>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Masa Panen</div>
-                    <div style="font-size: 1.8rem; font-weight: 900; color: var(--text-slate);">{{ $j->totalHariPanen - $j->hariKe }} <span style="font-size: 1rem; color: var(--text-muted);">HARI LAGI</span></div>
-                </div>
+
+    @if($semuaJadwal->isEmpty())
+        <div class="glass-card-premium rounded-3xl p-16 text-center animate-slide-up">
+            <div class="w-24 h-24 mx-auto mb-6 bg-emerald-50/50 backdrop-blur-sm rounded-full flex items-center justify-center text-emerald-300 border border-emerald-100">
+                <i data-lucide="cpu" class="w-12 h-12"></i>
             </div>
+            <h3 class="text-2xl font-bold text-slate-700 mb-2">Belum Ada Ekosistem Aktif</h3>
+            <p class="text-slate-500 mb-6 max-w-md mx-auto">Inisialisasi siklus tanam Anda di Area Lahan untuk memulai pemantauan AI presisi.</p>
+            <a href="{{ route('lahan.index') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-400 text-white font-bold rounded-xl shadow-md hover:shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-1">
+                <i data-lucide="rocket" class="w-5 h-5"></i> Inisialisasi Sekarang
+            </a>
+        </div>
+    @else
+        <div class="flex flex-col gap-10">
+            @foreach($semuaJadwal as $j)
+            <section class="glass-card-premium rounded-[2rem] p-8 md:p-10 relative overflow-hidden animate-slide-up group">
+                <!-- Botanical Background Pattern -->
+                <i data-lucide="sprout" class="absolute -right-10 -bottom-10 w-64 h-64 text-emerald-800/5 rotate-[-20deg] pointer-events-none group-hover:scale-110 transition-transform duration-1000 z-0"></i>
 
-            <!-- Progress Bar -->
-            <div class="progress-track-wrapper">
-                <div class="progress-info">
-                    <span style="font-size: 0.9rem; font-weight: 800; color: var(--primary-emerald);">HARI KE {{ $j->hariKe }}</span>
-                    <span style="font-size: 0.9rem; font-weight: 800; color: var(--text-muted);">{{ $j->progresPersen }}% COMPLETE</span>
-                </div>
-                <div class="progress-bar-glass">
-                    <div class="progress-fill" style="width: {{ $j->progresPersen }}%"></div>
-                </div>
-                <div class="phase-milestones">
-                    <div class="milestone-item {{ $j->progresPersen >= 5 ? 'active' : '' }}">PENYEMAIAN</div>
-                    <div class="milestone-item {{ $j->progresPersen >= 25 ? 'active' : '' }}">VEGETATIF</div>
-                    <div class="milestone-item {{ $j->progresPersen >= 60 ? 'active' : '' }}">GENERATIF</div>
-                    <div class="milestone-item {{ $j->progresPersen >= 95 ? 'active' : '' }}">PANEN</div>
-                </div>
-            </div>
-
-            <!-- Timeline Tasks -->
-            <div class="agronomy-timeline">
-                @foreach($j->daftar_tugas_hari_ini as $t)
-                @php
-                    $icon = '🌱';
-                    $color = '#10b981';
-                    $cat = $t['category'] ?? '';
-                    if(strpos($cat, 'Penyiraman') !== false) { $icon = '💧'; $color = '#3b82f6'; }
-                    elseif(strpos($cat, 'Pemupukan') !== false) { $icon = '🧪'; $color = '#8b5cf6'; }
-                    elseif(strpos($cat, 'Hama') !== false || strpos($cat, 'Protection') !== false) { $icon = '🛡️'; $color = '#ef4444'; }
-                @endphp
-                
-                <div class="task-card-premium {{ $t['is_done'] ? 'completed' : ($t['is_overdue'] ? 'overdue' : '') }}">
-                    @if(isset($t['fase']))
-                        <div class="fase-ribbon">FASE: {{ strtoupper($t['fase']) }}</div>
-                    @endif
-
-                    <div class="category-icon-box" style="color: {{ $color }}; background: {{ $color }}10;">
-                        {!! $icon !!}
-                    </div>
-
-                    <div>
-                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem; margin-top: 0.5rem;">
-                            <span class="time-label" style="margin-bottom: 0;">{{ $t['time'] }} WIB</span>
-                            @if($t['is_overdue'] && !$t['is_done'])
-                                <span class="overdue-alert">EXPIRED</span>
-                            @endif
-                        </div>
-                        <h3 class="task-title">{{ $t['name'] }}</h3>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.2rem;">
-                            {{ $t['desc'] ?? ($t['description'] ?? 'Parameter sistem sedang mengkalibrasi instruksi perawatan harian.') }}
-                        </p>
-
-                        @if(!empty($t['alat_bahan']) && is_array($t['alat_bahan']))
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            @foreach($t['alat_bahan'] as $tools)
-                                <span class="tool-tag">{{ $tools }}</span>
-                            @endforeach
-                        </div>
-                        @endif
-                    </div>
-
-                    <div style="text-align: right;">
-                        @if($t['is_done'])
-                            <div style="width: 45px; height: 45px; border-radius: 50%; background: var(--primary-emerald); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin: 0 auto;">
-                                <i class="fas fa-check"></i>
+                <div class="relative z-10">
+                    <!-- Header Section -->
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+                        <div>
+                            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight mb-2">{{ $j->nama_tanaman }}</h2>
+                            <div class="flex items-center gap-2 text-emerald-600 font-bold bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-100/50 inline-flex">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                <span>{{ $j->nama_lahan }}</span>
                             </div>
-                            <div style="font-size: 0.7rem; font-weight: 800; color: var(--primary-emerald); margin-top: 8px; text-transform: uppercase;">Selesai</div>
-                        @elseif($t['is_future'])
-                            <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Belum Waktunya</div>
-                        @else
-                            <button onclick="finishTask({{ $j->id }}, {{ $t['step'] }}, this)" class="cyber-btn" style="padding: 12px 20px; font-size: 0.85rem; border-radius: 12px;">
-                                Konfirmasi
+                        </div>
+                        <div class="text-right concave-box px-6 py-4 rounded-2xl">
+                            <div class="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-1">Estimasi Panen</div>
+                            <div class="text-4xl font-black text-slate-700 tracking-tighter">{{ max(0, $j->totalHariPanen - $j->hariKe) }} <span class="text-lg text-slate-400 font-bold">HARI LAGI</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar Section -->
+                    <div class="mb-12">
+                        <div class="flex justify-between items-end mb-3">
+                            <div class="flex items-center gap-2 text-emerald-600">
+                                <i data-lucide="calendar-days" class="w-5 h-5"></i>
+                                <span class="font-extrabold tracking-wide">HARI KE {{ $j->hariKe }}</span>
+                            </div>
+                            <span class="font-black text-slate-500 text-lg">{{ $j->progresPersen }}% <span class="text-xs tracking-widest">COMPLETE</span></span>
+                        </div>
+                        <div class="progress-bar-glass mb-4">
+                            <div class="progress-fill" style="width: {{ $j->progresPersen }}%"></div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 text-center text-[10px] md:text-xs font-bold uppercase tracking-wider">
+                            <div class="{{ $j->progresPersen >= 5 ? 'text-emerald-500' : 'text-slate-400' }} transition-colors duration-500">Penyemaian</div>
+                            <div class="{{ $j->progresPersen >= 25 ? 'text-emerald-500' : 'text-slate-400' }} transition-colors duration-500">Vegetatif</div>
+                            <div class="{{ $j->progresPersen >= 60 ? 'text-emerald-500' : 'text-slate-400' }} transition-colors duration-500">Generatif</div>
+                            <div class="{{ $j->progresPersen >= 95 ? 'text-emerald-500' : 'text-slate-400' }} transition-colors duration-500">Panen</div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Tasks -->
+                    <div class="pl-4 md:pl-8 border-l-2 border-dashed border-emerald-200/50 flex flex-col gap-8 relative">
+                        @foreach($j->daftar_tugas_hari_ini as $t)
+                        @php
+                            $icon = 'leaf';
+                            $colorClass = 'text-emerald-500';
+                            $bgClass = 'bg-emerald-50 border-emerald-100';
+                            
+                            $cat = $t['category'] ?? '';
+                            if(strpos($cat, 'Penyiraman') !== false) { 
+                                $icon = 'droplet'; 
+                                $colorClass = 'text-blue-500'; 
+                                $bgClass = 'bg-blue-50 border-blue-100';
+                            } elseif(strpos($cat, 'Pemupukan') !== false) { 
+                                $icon = 'flask-conical'; 
+                                $colorClass = 'text-purple-500'; 
+                                $bgClass = 'bg-purple-50 border-purple-100';
+                            } elseif(strpos($cat, 'Hama') !== false || strpos($cat, 'Protection') !== false) { 
+                                $icon = 'shield-alert'; 
+                                $colorClass = 'text-red-500'; 
+                                $bgClass = 'bg-red-50 border-red-100';
+                            }
+                        @endphp
+                        
+                        <div class="relative {{ $t['is_done'] ? 'opacity-70 grayscale-[0.3]' : 'hover:-translate-y-1' }} transition-all duration-300">
+                            <!-- Timeline Dot -->
+                            <div class="absolute -left-[23px] md:-left-[39px] top-8 w-4 h-4 rounded-full {{ $t['is_done'] ? 'bg-slate-300' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' }} border-4 border-[#f8fafc]"></div>
+                            
+                            <!-- Task Card -->
+                            <div class="concave-box rounded-[1.5rem] p-6 flex flex-col lg:flex-row gap-6 items-start lg:items-center {{ $t['is_overdue'] && !$t['is_done'] ? 'border-red-200 bg-red-50/10' : 'hover:bg-white/40' }} transition-colors">
+                                
+                                <!-- Icon Box -->
+                                <div class="w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center border shadow-sm {{ $bgClass }}">
+                                    <i data-lucide="{{ $icon }}" class="w-8 h-8 {{ $colorClass }}"></i>
+                                </div>
+
+                                <!-- Content -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center flex-wrap gap-3 mb-2">
+                                        <div class="flex items-center gap-1.5 text-sm font-bold text-slate-500 bg-white/50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                                            <i data-lucide="clock" class="w-4 h-4"></i>
+                                            <span>{{ $t['time'] }} WIB</span>
+                                        </div>
+                                        
+                                        @if(isset($t['fase']))
+                                            <span class="text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-md">{{ $t['fase'] }}</span>
+                                        @endif
+
+                                        @if($t['is_overdue'] && !$t['is_done'])
+                                            <span class="text-[10px] font-black uppercase tracking-widest bg-red-100 text-red-600 px-2.5 py-1 rounded-md flex items-center gap-1">
+                                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> Expired
+                                            </span>
+                                        @endif
+                                    </div>
+                                    
+                                    <h3 class="text-xl font-bold text-slate-800 mb-2">{{ $t['name'] }}</h3>
+                                    <p class="text-slate-500 text-sm leading-relaxed mb-4 max-w-3xl">
+                                        {{ $t['desc'] ?? ($t['description'] ?? 'Parameter sistem sedang mengkalibrasi instruksi perawatan harian.') }}
+                                    </p>
+
+                                    @if(!empty($t['alat_bahan']) && is_array($t['alat_bahan']))
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($t['alat_bahan'] as $tools)
+                                            <span class="text-[11px] font-bold text-slate-600 bg-slate-100/80 border border-slate-200 px-3 py-1 rounded-full flex items-center gap-1">
+                                                <i data-lucide="wrench" class="w-3 h-3"></i> {{ $tools }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <!-- Action Button -->
+                                <div class="shrink-0 w-full lg:w-auto mt-4 lg:mt-0 flex justify-end">
+                                    @if($t['is_done'])
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200 mb-1">
+                                                <i data-lucide="check" class="w-6 h-6"></i>
+                                            </div>
+                                            <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Selesai</span>
+                                        </div>
+                                    @elseif($t['is_future'])
+                                        <div class="px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 font-bold text-sm flex items-center gap-2">
+                                            <i data-lucide="lock" class="w-4 h-4"></i> Belum Waktunya
+                                        </div>
+                                    @else
+                                        <button onclick="finishTask({{ $j->id }}, {{ $t['step'] }}, this)" class="btn-shimmer flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-white font-bold rounded-xl transition-all duration-300 shadow-md hover:shadow-lg shadow-emerald-500/20 w-full lg:w-auto justify-center">
+                                            <i data-lucide="check-square" class="w-5 h-5"></i>
+                                            <span>Konfirmasi</span>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Footer Action -->
+                    <div class="mt-10 pt-6 border-t border-slate-200/50 flex justify-end">
+                        <form action="{{ route('jadwal.destroy', $j->id) }}" method="POST" onsubmit="return confirm('Hentikan siklus agronomis ini? Seluruh data riwayat akan dihapus dan tidak dapat dikembalikan.')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="flex items-center gap-2 px-5 py-3 bg-white/40 hover:bg-red-50 border border-red-200 text-red-500 hover:text-red-600 rounded-xl transition-all duration-300 font-bold shadow-sm group">
+                                <i data-lucide="power-off" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
+                                <span>Hentikan Produksi</span>
                             </button>
-                        @endif
+                        </form>
                     </div>
                 </div>
-                @endforeach
-            </div>
-
-            <!-- Footer Action -->
-            <div style="margin-top: 3rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                 <form action="{{ route('jadwal.destroy', $j->id) }}" method="POST" onsubmit="return confirm('Hentikan siklus agronomis ini? Seluruh data riwayat akan dihapus.')">
-                    @csrf @method('DELETE')
-                    <button type="submit" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 700; text-decoration: underline;">
-                        Hentikan Produksi
-                    </button>
-                </form>
-            </div>
-        </section>
-        @endforeach
-    </div>
-@endif
+            </section>
+            @endforeach
+        </div>
+    @endif
+</div>
 @endsection
 
 @section('scripts')
@@ -281,7 +285,9 @@ function finishTask(id, step, btn) {
     if(!confirm("Anda yakin tugas ini telah selesai?")) return;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Memproses...</span>';
+    lucide.createIcons();
 
     fetch(`/complete-task/${id}`, {
         method: 'POST',
@@ -300,9 +306,9 @@ function finishTask(id, step, btn) {
         setTimeout(() => { location.reload(); }, 300);
     })
     .catch(error => {
-        alert("Gagal sinkronisasi.");
+        alert("Gagal sinkronisasi dengan server.");
         btn.disabled = false;
-        btn.innerHTML = 'Konfirmasi';
+        btn.innerHTML = originalContent;
     });
 }
 </script>

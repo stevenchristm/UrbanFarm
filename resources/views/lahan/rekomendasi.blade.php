@@ -11,10 +11,20 @@
     }
 
     .recommendation-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.03);
         padding: 0;
         overflow: hidden;
         display: flex;
         flex-direction: column;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .recommendation-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0, 0, 0, 0.05);
     }
 
     .match-badge {
@@ -71,19 +81,27 @@
             <h1>🧬 Analitik Kecocokan AI</h1>
             <p>Parameter sistem telah dipetakan terhadap basis data botani UrbanFarm.</p>
         </div>
-        <div class="glass-card" style="padding: 10px 20px; border-radius: 15px; border-color: var(--primary-emerald); background: var(--bg-soft);">
-            <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Lahan Aktif:</span>
-            <span style="font-weight: 800; color: var(--primary-emerald);">{{ $lahan->nama_lahan }}</span>
-            <span style="margin-left: 10px; color: var(--text-muted); font-weight: 600;">🌡️ {{ $lahan->suhu_lahan }}°C / ☀️ {{ $lahan->cahaya_lahan }}h</span>
+        <div style="padding: 12px 24px; border-radius: 16px; border: 1px solid #cbd5e1; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+            <span style="font-size: 0.75rem; color: #64748b; display: block; font-weight: 600;">Lahan Aktif:</span>
+            <span style="font-weight: 800; color: #10b981; font-size: 1.1rem;">{{ $lahan->nama_lahan }}</span>
+            <span style="margin-left: 10px; color: #475569; font-weight: 600; font-size: 0.9rem;">🌡️ {{ $lahan->suhu_lahan }}°C / ☀️ {{ $lahan->cahaya_lahan }}h</span>
         </div>
     </div>
 </div>
 
 <div class="tanaman-grid animate-up" style="animation-delay: 0.1s;">
     @forelse($tanamanCocok as $t)
-    <div class="glass-card recommendation-card">
-        <div style="position: relative; height: 200px; background: var(--bg-soft); overflow: hidden;">
-            <div class="match-badge" style="background: {{ $t->skor_kecocokan > 80 ? 'var(--primary-emerald)' : '#f39c12' }}; color: white;">
+    <div class="recommendation-card">
+        <div style="position: relative; height: 220px; background: #f8fafc; overflow: hidden; border-bottom: 1px solid #cbd5e1;">
+            @php
+                $matchColor = '#ef4444'; // Merah untuk 0-30%
+                if($t->skor_kecocokan >= 76) {
+                    $matchColor = '#10b981'; // Hijau untuk 76-100%
+                } elseif($t->skor_kecocokan >= 31) {
+                    $matchColor = '#f59e0b'; // Kuning untuk 31-75%
+                }
+            @endphp
+            <div class="match-badge" style="background: {{ $matchColor }}; color: white; border: 2px solid #ffffff;">
                 MATCH {{ $t->skor_kecocokan }}%
             </div>
             @if($t->foto_tanaman)
@@ -94,8 +112,8 @@
         </div>
 
         <div style="padding: 1.5rem; flex-grow: 1; display: flex; flex-direction: column;">
-            <h3 style="margin-bottom: 10px; color: var(--text-slate); font-weight: 700;">{{ $t->nama_tanaman }}</h3>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; flex-grow: 1;">
+            <h3 style="margin-bottom: 10px; color: #1e293b; font-weight: 800; font-size: 1.25rem;">{{ $t->nama_tanaman }}</h3>
+            <p style="font-size: 0.9rem; color: #64748b; line-height: 1.6; flex-grow: 1;">
                 {{ $t->deskripsi_edukasi ?? 'Tanaman ini sangat sesuai untuk optimasi ketahanan pangan di lahan Anda.' }}
             </p>
 
@@ -111,12 +129,13 @@
             </div>
 
             @if($t->video_id)
-                <button onclick="openVideo('{{ $t->video_id }}')" class="cyber-btn" style="margin-top: 1.5rem; justify-content: center;">
-                    <i class="fab fa-youtube"></i> Panduan Tanam
+                <button onclick="openVideo('{{ $t->video_id }}')" class="w-full mt-6 flex justify-center items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:shadow-[0_4px_25px_rgba(16,185,129,0.5)] transition-all duration-300">
+                    <i data-lucide="youtube" class="w-5 h-5"></i>
+                    <span>Panduan Tanam</span>
                 </button>
             @else
-                <button class="cyber-btn cyber-btn-outline" style="margin-top: 1.5rem; justify-content: center; opacity: 0.5;" disabled>
-                    Video Segera Hadir
+                <button class="w-full mt-6 flex justify-center items-center gap-2 px-6 py-3 bg-slate-100 text-slate-400 font-semibold rounded-xl border border-slate-200" disabled>
+                    <span>Video Segera Hadir</span>
                 </button>
             @endif
         </div>
@@ -131,8 +150,9 @@
 </div>
 
 <div style="margin-top: 2rem;">
-    <a href="{{ route('lahan.index') }}" class="cyber-btn cyber-btn-outline" style="font-size: 0.8rem;">
-        <i class="fas fa-arrow-left"></i> Kembali ke Lahan
+    <a href="{{ route('lahan.index') }}" class="inline-flex justify-center items-center gap-2 px-6 py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl shadow-sm transition-all duration-300">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        <span>Kembali ke Lahan</span>
     </a>
 </div>
 

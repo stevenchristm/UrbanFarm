@@ -6,12 +6,17 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::all();
+        // Mengurutkan user yang sedang login agar berada di urutan pertama
+        $users = User::orderByRaw('CASE WHEN id_user = ? THEN 1 ELSE 2 END', [Auth::id()])
+                     ->orderBy('nama', 'asc') // Opsional: urutkan sisanya berdasarkan nama
+                     ->get();
+                     
         return view('user.index', compact('users'));
     }
 
@@ -35,7 +40,8 @@ class UserController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,'.$id.',id_user',
-            'password_konfirmasi' => 'required'
+            'password_konfirmasi' => 'required',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $user = User::where('id_user', $id)->firstOrFail();
@@ -45,10 +51,21 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Password salah! Perubahan ditolak.');
         }
 
-        $user->update([
+        $updateData = [
             'nama' => $request->nama,
             'email' => $request->email,
-        ]);
+        ];
+
+        if ($request->hasFile('logo')) {
+            // Hapus logo lama jika ada
+            if ($user->logo_path) {
+                Storage::disk('public')->delete($user->logo_path);
+            }
+            $path = $request->file('logo')->store('logos', 'public');
+            $updateData['logo_path'] = $path;
+        }
+
+        $user->update($updateData);
 
         return redirect()->route('user.index')->with('success', 'Profil Anda berhasil diperbarui!');
     }

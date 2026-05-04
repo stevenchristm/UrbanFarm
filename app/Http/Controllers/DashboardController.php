@@ -73,7 +73,34 @@ class DashboardController extends Controller
         $totalTugasSelesai = $taskStats['selesai'];
         $totalTugasSisa = $taskStats['sisa'];
 
+        // --- FETCH LIVE WEATHER DATA ---
+        $weatherKey = config('services.openweather.key');
+        $weather = [
+            'temp' => 28, 
+            'desc' => 'Partly cloudy', 
+            'humidity' => 68, 
+            'wind' => 6,
+            'icon' => '02d'
+        ];
+
+        try {
+            $weatherResponse = Http::timeout(5)->get("https://api.openweathermap.org/data/2.5/weather?q=Malang&appid={$weatherKey}&units=metric&lang=id");
+            if ($weatherResponse->successful()) {
+                $wData = $weatherResponse->json();
+                $weather = [
+                    'temp' => round($wData['main']['temp']),
+                    'desc' => ucfirst($wData['weather'][0]['description']),
+                    'humidity' => $wData['main']['humidity'],
+                    'wind' => round($wData['wind']['speed'] * 3.6), // m/s to km/h
+                    'icon' => $wData['weather'][0]['icon']
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Dashboard Weather Fetch Failed: ' . $e->getMessage());
+        }
+
         return view('dashboard', compact(
+            'weather',
             'jadwalUser',
             'katalog',
             'lahan',
