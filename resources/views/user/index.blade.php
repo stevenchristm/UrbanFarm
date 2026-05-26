@@ -136,6 +136,134 @@
         gap: 4px;
         z-index: 10;
     }
+
+    /* Chatbox Styles */
+    .chatbox-container {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        width: 350px;
+        height: 500px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(16, 185, 129, 0.1);
+        display: flex;
+        flex-direction: column;
+        z-index: 50;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        transform: translateY(0);
+        opacity: 1;
+    }
+    .chatbox-container.closed {
+        transform: translateY(-120%);
+        opacity: 0;
+        pointer-events: none;
+    }
+    .chatbox-header {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 1.5rem 1.5rem 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 700;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .chat-message {
+        max-width: 85%;
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        line-height: 1.4;
+        position: relative;
+    }
+    .chat-message.self {
+        align-self: flex-end;
+        background: #10b981;
+        color: white;
+        border-bottom-right-radius: 0.25rem;
+    }
+    .chat-message.other {
+        align-self: flex-start;
+        background: #f1f5f9;
+        color: #334155;
+        border-bottom-left-radius: 0.25rem;
+        border: 1px solid #e2e8f0;
+    }
+    .chat-sender {
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        opacity: 0.8;
+    }
+    .chat-input-area {
+        padding: 1rem;
+        border-top: 1px solid rgba(16, 185, 129, 0.1);
+        display: flex;
+        gap: 0.5rem;
+        background: white;
+        border-radius: 0 0 1.5rem 1.5rem;
+    }
+    .chat-input {
+        flex: 1;
+        border: 1px solid #cbd5e1;
+        border-radius: 2rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        outline: none;
+        transition: border-color 0.3s;
+    }
+    .chat-input:focus {
+        border-color: #10b981;
+    }
+    .chat-send-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+    }
+    .chat-send-btn:hover {
+        background: #059669;
+        transform: scale(1.05);
+    }
+    .chat-toggle-btn {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+        cursor: pointer;
+        z-index: 40;
+        transition: transform 0.3s;
+    }
+    .chat-toggle-btn:hover {
+        transform: scale(1.1);
+    }
 </style>
 @endsection
 
@@ -175,7 +303,7 @@
     <!-- Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8 animate-slide-up" style="animation-delay: 0.1s;">
         @forelse($users as $u)
-            <div class="glass-card-premium rounded-[2rem] p-8 relative flex flex-col items-center group overflow-hidden {{ $u->id_user == Auth::id() ? 'glass-card-my-profile' : '' }}">
+            <div class="glass-card-premium rounded-[2rem] p-8 relative flex flex-col items-center group overflow-hidden {{ $u->id_user == Auth::id() ? 'glass-card-my-profile' : '' }} user-card" {!! $loop->iteration > 8 ? 'style="display: none;"' : '' !!}>
                 
                 @if($u->id_user == Auth::id())
                     <div class="me-tag">
@@ -225,5 +353,181 @@
             </div>
         @endforelse
     </div>
+
+    @if(count($users) > 8)
+    <div class="flex justify-center mt-6 animate-slide-up" id="showMoreUsersContainer" style="animation-delay: 0.2s;">
+        <button id="showMoreUsersBtn" class="px-8 py-3 bg-white/70 hover:bg-white backdrop-blur-md border-2 border-emerald-200 text-emerald-700 font-bold rounded-2xl shadow-sm transition-all hover:shadow-md hover:-translate-y-1 flex items-center gap-2 group">
+            <span>Lihat Lainnya</span>
+            <i data-lucide="chevron-down" class="w-5 h-5 group-hover:translate-y-1 transition-transform"></i>
+        </button>
+    </div>
+    @endif
 </div>
+
+<!-- Chat Toggle Button -->
+<div class="chat-toggle-btn" id="chatToggleBtn">
+    <i data-lucide="message-circle" class="w-7 h-7"></i>
+</div>
+
+<!-- Chatbox -->
+<div class="chatbox-container closed" id="chatbox">
+    <div class="chatbox-header">
+        <div class="flex items-center gap-2">
+            <i data-lucide="messages-square" class="w-5 h-5"></i>
+            <span>Live Community Chat</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="clearChatBtn" class="hover:text-rose-200 transition-colors" title="Hapus Semua Riwayat">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+            <button id="closeChatBtn" class="hover:text-emerald-200 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+        <!-- Messages will be loaded here -->
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Tulis pesan..." autocomplete="off">
+        <button id="sendChatBtn" class="chat-send-btn">
+            <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+        </button>
+    </div>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        const userId = {{ Auth::id() }};
+        const chatbox = $('#chatbox');
+        const chatToggleBtn = $('#chatToggleBtn');
+        const closeChatBtn = $('#closeChatBtn');
+        const chatMessages = $('#chatMessages');
+        const chatInput = $('#chatInput');
+        const sendChatBtn = $('#sendChatBtn');
+        const clearChatBtn = $('#clearChatBtn');
+
+        let isChatLoaded = false;
+
+        // Show More Users Logic
+        const showMoreUsersBtn = $('#showMoreUsersBtn');
+        const showMoreUsersContainer = $('#showMoreUsersContainer');
+        if (showMoreUsersBtn.length) {
+            showMoreUsersBtn.on('click', function() {
+                $('.user-card:hidden').fadeIn(400);
+                showMoreUsersContainer.fadeOut(300);
+            });
+        }
+
+        // Toggle Chatbox
+        chatToggleBtn.on('click', function() {
+            chatbox.removeClass('closed');
+            if (!isChatLoaded) {
+                loadMessages();
+                isChatLoaded = true;
+            } else {
+                scrollToBottom();
+            }
+        });
+
+        closeChatBtn.on('click', function() {
+            chatbox.addClass('closed');
+        });
+
+        // Load Messages
+        function loadMessages() {
+            chatMessages.html('<div class="text-center text-xs text-slate-400 my-4">Memuat pesan...</div>');
+            $.get('/chat/messages', function(messages) {
+                chatMessages.empty();
+                messages.forEach(msg => {
+                    appendMessage(msg);
+                });
+                scrollToBottom();
+            });
+        }
+
+        function appendMessage(msg) {
+            const isSelf = msg.user_id === userId;
+            const alignClass = isSelf ? 'self' : 'other';
+            const senderName = isSelf ? 'Anda' : (msg.user ? msg.user.nama : 'Unknown');
+            
+            const html = `
+                <div class="chat-message ${alignClass}">
+                    <div class="chat-sender">${senderName}</div>
+                    <div class="chat-text">${msg.message}</div>
+                </div>
+            `;
+            chatMessages.append(html);
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTop(chatMessages[0].scrollHeight);
+        }
+
+        // Send Message
+        function sendMessage() {
+            const text = chatInput.val().trim();
+            if (!text) return;
+
+            // Optimistic UI update
+            const tempMsg = {
+                user_id: userId,
+                user: { nama: 'Anda' },
+                message: text
+            };
+            appendMessage(tempMsg);
+            scrollToBottom();
+            chatInput.val('');
+            
+            $.post('/chat/send', {
+                _token: '{{ csrf_token() }}',
+                message: text
+            }).fail(function() {
+                alert('Gagal mengirim pesan');
+            });
+        }
+
+        sendChatBtn.on('click', sendMessage);
+        chatInput.on('keypress', function(e) {
+            if (e.which === 13) sendMessage();
+        });
+
+        // Clear Chat
+        clearChatBtn.on('click', function() {
+            if(confirm('Yakin ingin menghapus seluruh riwayat chat komunitas dari tampilan Anda?')) {
+                $.ajax({
+                    url: '/chat/clear',
+                    type: 'DELETE',
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function() {
+                        chatMessages.empty();
+                    },
+                    error: function() {
+                        alert('Gagal menghapus riwayat chat');
+                    }
+                });
+            }
+        });
+
+        // Laravel Echo listening
+        if (window.Echo) {
+            window.Echo.channel('community-chat')
+                .listen('MessageSent', (e) => {
+                    // Ignore if it's our own message because we already appended it optimistically
+                    if (e.message.user_id !== userId) {
+                        appendMessage(e.message);
+                        if (!chatbox.hasClass('closed')) {
+                            scrollToBottom();
+                        } else {
+                            // Optional: add a notification badge on the toggle button
+                            chatToggleBtn.addClass('animate-bounce');
+                            setTimeout(() => chatToggleBtn.removeClass('animate-bounce'), 3000);
+                        }
+                    }
+                });
+        }
+    });
+</script>
 @endsection

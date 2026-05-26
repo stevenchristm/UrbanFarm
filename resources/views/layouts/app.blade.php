@@ -140,6 +140,62 @@
       lucide.createIcons();
     </script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Global Notifications Script -->
+    @auth
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.Echo) {
+                const userId = {{ Auth::id() }};
+                window.Echo.private('App.Models.User.' + userId)
+                    .listen('TaskNotification', (e) => {
+                        showGlobalToast(e.title, e.message, e.actionUrl);
+                    });
+            }
+
+            function showGlobalToast(title, message, url) {
+                const toastId = 'toast-' + Math.random().toString(36).substr(2, 9);
+                const actionHtml = url ? `<a href="${url}" class="mt-2 inline-block text-xs font-bold text-emerald-600 hover:text-emerald-800">Lihat Detail &rarr;</a>` : '';
+                
+                const toastHtml = `
+                    <div id="${toastId}" class="fixed top-4 right-4 z-[100] max-w-sm w-full bg-white/95 backdrop-blur-md shadow-2xl border-2 border-emerald-500/20 rounded-2xl p-4 flex gap-4 transform transition-all duration-500 translate-x-full opacity-0">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center text-emerald-700 shadow-inner">
+                                <i data-lucide="bell-ring" class="w-5 h-5 animate-pulse"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 pt-0.5">
+                            <p class="text-sm font-bold text-slate-800">${title}</p>
+                            <p class="text-sm text-slate-600 mt-1 leading-relaxed">${message}</p>
+                            ${actionHtml}
+                        </div>
+                        <button onclick="document.getElementById('${toastId}').remove()" class="flex-shrink-0 text-slate-400 hover:text-rose-500 transition-colors">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                `;
+                
+                $('body').append(toastHtml);
+                lucide.createIcons(); // re-init icons for the new toast
+                
+                // Animate in
+                setTimeout(() => {
+                    $(`#${toastId}`).removeClass('translate-x-full opacity-0');
+                }, 100);
+
+                // Auto remove after 7 seconds
+                setTimeout(() => {
+                    const toast = $(`#${toastId}`);
+                    if (toast.length) {
+                        toast.addClass('translate-x-full opacity-0');
+                        setTimeout(() => toast.remove(), 500);
+                    }
+                }, 7000);
+            }
+        });
+    </script>
+    @endauth
+
     @yield('scripts')
 </body>
 </html>

@@ -40,6 +40,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/{id}/edit', [UserController::class, 'edit'])->name('user.edit');
     Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
 
+    // Chat Routes
+    Route::get('/chat/messages', [\App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::post('/chat/send', [\App\Http\Controllers\ChatController::class, 'store'])->name('chat.store');
+    Route::delete('/chat/clear', [\App\Http\Controllers\ChatController::class, 'clear'])->name('chat.clear');
+
     Route::post('/logout', function () {
         Auth::logout();
         request()->session()->invalidate();
@@ -60,3 +65,15 @@ Route::post('/jadwal/selesai', [JadwalController::class, 'tandaiSelesai'])->name
 
 Route::get('/ai-assistant', [AiController::class, 'index'])->name('ai.index');
 Route::post('/ai-ask', [AiController::class, 'chat'])->name('ai.ask');Route::post('/ai-clear', [AiController::class, 'clear'])->name('ai.clear');
+
+Route::post('/test-notification', function(\Illuminate\Http\Request $request) {
+    if(!Auth::check()) return abort(403);
+    broadcast(new \App\Events\TaskNotification(Auth::id(), 'Tugas Baru!', 'Waktunya menyiram tanaman Anda.', '/jadwal'));
+    return response()->json(['status' => 'ok']);
+});
+
+Route::get('/test-notification', function() {
+    if(!Auth::check()) return 'Silakan login terlebih dahulu!';
+    broadcast(new \App\Events\TaskNotification(Auth::id(), 'Tes Developer!', 'Notifikasi realtime berhasil dipicu secara manual!', '/semua-jadwal'));
+    return 'Notifikasi berhasil dikirim! Silakan periksa halaman aplikasi Anda yang sedang terbuka.';
+});
