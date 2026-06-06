@@ -285,9 +285,9 @@
             <div class="p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
                 <i data-lucide="users" class="w-8 h-8 md:w-10 md:h-10 text-emerald-600"></i>
             </div>
-            Komunitas Petani Digital
+            {{ \App\Models\Setting::where('key','komunitas_title')->value('value') ?? 'Komunitas Petani Digital' }}
         </h1>
-        <p class="text-slate-500 font-medium text-lg max-w-2xl">Terhubung, belajar, dan berkolaborasi dengan jaringan agronomis modern yang menggunakan ekosistem UrbanFarm.</p>
+        <p class="text-slate-500 font-medium text-lg max-w-2xl">{{ \App\Models\Setting::where('key','komunitas_subtitle')->value('value') ?? 'Terhubung, belajar, dan berkolaborasi dengan jaringan agronomis modern yang menggunakan ekosistem UrbanFarm.' }}</p>
     </div>
 
     <!-- Alert Notification -->

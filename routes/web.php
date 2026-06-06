@@ -54,6 +54,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::get('/semua-jadwal', [JadwalController::class, 'index'])->name('jadwal.index');
+Route::get('/semua-jadwal/{id}/attention', [JadwalController::class, 'getAttentionAnalysis'])->name('jadwal.attention');
 
 Route::post('/simpan-tanam', [DashboardController::class, 'simpanTanam'])->name('simpan.tanam');
 Route::post('/sync-katalog-ai', [DashboardController::class, 'syncKatalogAi'])->name('sync.katalog.ai');
@@ -76,4 +77,19 @@ Route::get('/test-notification', function() {
     if(!Auth::check()) return 'Silakan login terlebih dahulu!';
     broadcast(new \App\Events\TaskNotification(Auth::id(), 'Tes Developer!', 'Notifikasi realtime berhasil dipicu secara manual!', '/semua-jadwal'));
     return 'Notifikasi berhasil dikirim! Silakan periksa halaman aplikasi Anda yang sedang terbuka.';
+});
+
+// --- 3. ADMIN PANEL ROUTES ---
+use App\Http\Controllers\AdminController;
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminController::class, 'authenticate'])->name('authenticate');
+    Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+
+    // Protected admin routes
+    Route::middleware('is.admin')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
+        Route::post('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+    });
 });

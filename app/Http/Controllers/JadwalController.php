@@ -97,6 +97,24 @@ class JadwalController extends Controller
             }
 
             $j->daftar_tugas_hari_ini = $daftarTugas;
+
+            // 6. Hitung missedTasksCount
+            $totalTasksShouldBeDone = 0;
+            if ($j->details()->exists()) {
+                $totalTasksShouldBeDone = $j->details()->where('hari_ke', '<', $j->hariKe)->count();
+            } else {
+                $totalTasksShouldBeDone = ($j->hariKe - 1) * 3;
+            }
+            
+            // Tambahkan tugas hari ini yang sudah overdue
+            foreach ($daftarTugas as $tugas) {
+                if ($currentTime > $tugas['end_num'] && $tugas['end_num'] > 0) {
+                    $totalTasksShouldBeDone++;
+                }
+            }
+
+            $totalCompletedTasks = LogPerawatan::where('penjadwalan_id', $j->id)->count();
+            $j->missedTasksCount = max(0, $totalTasksShouldBeDone - $totalCompletedTasks);
         }
 
         return view('jadwal.index', compact('semuaJadwal'));
@@ -125,5 +143,63 @@ class JadwalController extends Controller
             return redirect()->back()->with('success', 'Dihapus');
         }
         return redirect()->back();
+    }
+
+    public function getAttentionAnalysis(Request $request, $id): JsonResponse
+    {
+        $jadwal = Penjadwalan::where('id', $id)->where('user_id', Auth::id())->first();
+        if (!$jadwal) return response()->json(['message' => 'Not Found'], 404);
+
+        $hariKe = $request->query('hari_ke', 1);
+        $missedCount = $request->query('missed_count', 1);
+        $tanaman = $jadwal->nama_tanaman;
+
+        if ($missedCount > 5) {
+            $prompt = "Dalam 2 kalimat singkat dan tegas, nyatakan bahwa tanaman {$tanaman} (Hari ke-{$hariKe}) kemungkinan besar sudah mati atau sekarat akibat {$missedCount} tugas perawatan yang terlewat. Sebutkan gejala fisik yang paling parah seperti daun layu total, batang membusuk, dll. Jangan gunakan pembukaan seperti 'Sebagai AI' atau 'Berdasarkan'."; 
+        } else {
+            $prompt = "Dalam 2-3 kalimat singkat dan langsung, jelaskan dampak fisik yang sedang terjadi pada tanaman {$tanaman} (Hari ke-{$hariKe}) akibat {$missedCount} tugas perawatan yang terlewat. Sebutkan gejala spesifik seperti daun menguning, pertumbuhan terhambat, atau rentan hama sesuai jenis kelalaiannya. Jangan gunakan pembukaan seperti 'Sebagai AI' atau 'Berdasarkan'."; 
+        }
+
+        $groqKey = env('GROQ_API_KEY');
+        if (!$groqKey) {
+            return response()->json(['message' => 'API Key tidak dikonfigurasi.'], 500);
+        }
+
+        $url = "https://api.groq.com/openai/v1/chat/completions";
+        
+        $payload = [
+            "model" => "llama-3.1-8b-instant",
+            "messages" => [
+                ["role" => "user", "content" => $prompt]
+            ],
+            "temperature" => 0.5,
+            "max_tokens" => 2048
+        ];
+
+        try {
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $groqKey
+            ]);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            
+            $response = curl_exec($ch);
+            curl_close($ch);
+
+            $result = json_decode($response, true);
+            if (isset($result['choices'][0]['message']['content'])) {
+                $text = $result['choices'][0]['message']['content'];
+                return response()->json(['analysis' => $text]);
+            }
+
+            return response()->json(['analysis' => 'AI sedang tidak dapat menganalisis tanaman saat ini.'], 200);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Terjadi kesalahan sistem.'], 500);
+        }
     }
 }

@@ -143,7 +143,7 @@ class DashboardController extends Controller
         try {
             $tanaman = KatalogTanaman::query()->where('nama_tanaman', $request->tanaman)->first();
             $weatherKey = env('OPENWEATHER_API_KEY');
-            $geminiKey = env('GEMINI_API_KEY');
+            $groqKey = env('GROQ_API_KEY');
 
             // 1. Ambil Cuaca (Default Malang)
             $weatherUrl = "https://api.openweathermap.org/data/2.5/weather?q=Malang&appid={$weatherKey}&units=metric&lang=id";
@@ -165,19 +165,24 @@ class DashboardController extends Controller
             Sesuaikan instruksi kegiatan secara dinamis dengan membandingkannya terhadap kondisi cuaca real-time saat ini (suhu {$temp}°C, kelembapan {$humidity}%, dan kondisi {$desc}) agar rekomendasi penyiraman dan pemupukan menjadi akurat. 
             Hasilkan output hanya dalam format JSON array yang berisi kolom: hari_ke, kegiatan, deskripsi, dan kategori agar dapat langsung disimpan ke dalam database sistem.";
 
-            // 3. Panggil Gemini
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $geminiKey;
-            $response = Http::withHeaders(['Content-Type' => 'application/json'])
+            // 3. Panggil Groq AI
+            $url = "https://api.groq.com/openai/v1/chat/completions";
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $groqKey
+            ])
                 ->timeout(120)
                 ->post($url, [
-                "contents" => [
-                    ["parts" => [["text" => $prompt]]]
-                ]
+                "model" => "llama-3.3-70b-versatile",
+                "messages" => [
+                    ["role" => "user", "content" => $prompt]
+                ],
+                "temperature" => 0.5
             ]);
 
             if ($response->successful()) {
                 $result = $response->json();
-                $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                $aiText = $result['choices'][0]['message']['content'] ?? '';
 
                 // Bersihkan Markdown JSON jika ada
                 $jsonText = preg_replace('/```json\s*|```/', '', $aiText);
@@ -217,25 +222,30 @@ class DashboardController extends Controller
         try {
             $tanamanList = KatalogTanaman::query()->pluck('nama_tanaman')->toArray();
             $tanamanStr = implode(', ', $tanamanList);
-            $geminiKey = env('GEMINI_API_KEY');
+            $groqKey = env('GROQ_API_KEY');
 
             $prompt = "Berikan estimasi masa panen (dalam satuan hari) untuk daftar tanaman berikut: {$tanamanStr}. 
             Hasilkan output hanya dalam format JSON object dengan format: {\"Nama Tanaman\": durasi_hari}. 
             Pastikan durasi yang diberikan akurat berdasarkan siklus hidup asli tanaman tersebut (contoh: Padi sekitar 110-120 hari). 
             Berikan nilai integer tunggal untuk tiap tanaman.";
 
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $geminiKey;
-            $response = Http::withHeaders(['Content-Type' => 'application/json'])
+            $url = "https://api.groq.com/openai/v1/chat/completions";
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Bearer ' . $groqKey
+            ])
                 ->timeout(120)
                 ->post($url, [
-                "contents" => [
-                    ["parts" => [["text" => $prompt]]]
-                ]
+                "model" => "llama-3.3-70b-versatile",
+                "messages" => [
+                    ["role" => "user", "content" => $prompt]
+                ],
+                "temperature" => 0.5
             ]);
 
             if ($response->successful()) {
                 $result = $response->json();
-                $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                $aiText = $result['choices'][0]['message']['content'] ?? '';
                 $jsonText = preg_replace('/```json\s*|```/', '', $aiText);
                 $harvestData = json_decode(trim($jsonText), true);
 

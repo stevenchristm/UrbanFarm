@@ -106,9 +106,9 @@
             <div class="p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
                 <i data-lucide="dna" class="w-8 h-8 md:w-10 md:h-10 text-emerald-600"></i>
             </div>
-            Pusat Kendali Agronomi
+            {{ \App\Models\Setting::where('key','jadwal_title')->value('value') ?? 'Pusat Kendali Agronomi' }}
         </h1>
-        <p class="text-slate-500 font-medium text-lg max-w-2xl">Algoritma UrbanFarm Master Agronomist telah mensinkronisasi profil pertumbuhan Anda dengan cuaca mikro saat ini.</p>
+        <p class="text-slate-500 font-medium text-lg max-w-2xl">{{ \App\Models\Setting::where('key','jadwal_subtitle')->value('value') ?? 'Algoritma UrbanFarm Master Agronomist telah mensinkronisasi profil pertumbuhan Anda dengan cuaca mikro saat ini.' }}</p>
     </div>
 
     @if($semuaJadwal->isEmpty())
@@ -262,10 +262,18 @@
                     </div>
 
                     <!-- Footer Action -->
-                    <div class="mt-10 pt-6 border-t border-slate-200/50 flex justify-end">
-                        <form action="{{ route('jadwal.destroy', $j->id) }}" method="POST" onsubmit="return confirm('Hentikan siklus agronomis ini? Seluruh data riwayat akan dihapus dan tidak dapat dikembalikan.')">
+                    <div class="mt-10 pt-6 border-t border-slate-200/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            @if($j->missedTasksCount > 0)
+                            <button onclick="showAttention({{ $j->id }}, {{ $j->hariKe }}, {{ $j->missedTasksCount }}, this)" class="flex items-center gap-2 px-5 py-3 bg-red-500 hover:bg-red-600 border border-red-600 text-white rounded-xl transition-all duration-300 font-bold shadow-sm shadow-red-500/30 group animate-pulse hover:animate-none w-full md:w-auto justify-center">
+                                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                                <span>Perhatian</span>
+                            </button>
+                            @endif
+                        </div>
+                        <form action="{{ route('jadwal.destroy', $j->id) }}" method="POST" onsubmit="return confirm('Hentikan siklus agronomis ini? Seluruh data riwayat akan dihapus dan tidak dapat dikembalikan.')" class="w-full md:w-auto">
                             @csrf @method('DELETE')
-                            <button type="submit" class="flex items-center gap-2 px-5 py-3 bg-white/40 hover:bg-red-50 border border-red-200 text-red-500 hover:text-red-600 rounded-xl transition-all duration-300 font-bold shadow-sm group">
+                            <button type="submit" class="w-full md:w-auto flex justify-center items-center gap-2 px-5 py-3 bg-white/40 hover:bg-red-50 border border-red-200 text-red-500 hover:text-red-600 rounded-xl transition-all duration-300 font-bold shadow-sm group">
                                 <i data-lucide="power-off" class="w-4 h-4 transition-transform group-hover:scale-110"></i>
                                 <span>Hentikan Produksi</span>
                             </button>
@@ -310,6 +318,100 @@ function finishTask(id, step, btn) {
         btn.disabled = false;
         btn.innerHTML = originalContent;
     });
+}
+
+function showAttention(id, hariKe, missedCount, btn) {
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i><span>Menganalisis...</span>';
+    btn.disabled = true;
+    lucide.createIcons();
+
+    fetch(`/semua-jadwal/${id}/attention?hari_ke=${hariKe}&missed_count=${missedCount}`)
+    .then(response => response.json())
+    .then(data => {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+        lucide.createIcons();
+        
+        if(data.analysis) {
+            showAiModal(data.analysis);
+        } else {
+            alert("Gagal memuat analisis AI.");
+        }
+    })
+    .catch(error => {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+        lucide.createIcons();
+        alert("Terjadi kesalahan jaringan.");
+    });
+}
+
+function showAiModal(message) {
+    const modalId = 'ai-modal-' + Math.random().toString(36).substr(2, 9);
+
+    // Build modal structure without putting 'message' inside a template literal
+    const overlay = document.createElement('div');
+    overlay.id = modalId;
+    overlay.className = 'fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm opacity-0 transition-opacity duration-300';
+
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl transform scale-95 transition-all duration-300 relative border border-rose-100';
+
+    const botBadge = document.createElement('div');
+    botBadge.className = 'absolute -top-6 -right-6 w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center border-4 border-white shadow-sm';
+    botBadge.innerHTML = '<i data-lucide="bot" class="w-8 h-8 text-rose-500"></i>';
+
+    const title = document.createElement('h3');
+    title.className = 'text-2xl font-extrabold text-slate-800 mb-2 flex items-center gap-2';
+    title.innerHTML = '<i data-lucide="triangle-alert" class="w-6 h-6 text-rose-500"></i> Peringatan Kelalaian';
+
+    const subtitle = document.createElement('p');
+    subtitle.className = 'text-slate-500 text-sm font-medium mb-6';
+    subtitle.textContent = 'Analisis dari UrbanFarm AI Master Agronomist';
+
+    const textBox = document.createElement('div');
+    textBox.className = 'bg-rose-50/50 border border-rose-100 p-5 rounded-2xl mb-6';
+
+    const textContent = document.createElement('p');
+    textContent.className = 'text-slate-700 leading-relaxed text-[15px] font-medium';
+    textContent.textContent = message; // Safely set text - no template literal issues
+    textBox.appendChild(textContent);
+
+    const footer = document.createElement('div');
+    footer.className = 'flex justify-end';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all shadow-md';
+    closeBtn.textContent = 'Mengerti';
+    closeBtn.onclick = () => closeAiModal(modalId);
+    footer.appendChild(closeBtn);
+
+    card.appendChild(botBadge);
+    card.appendChild(title);
+    card.appendChild(subtitle);
+    card.appendChild(textBox);
+    card.appendChild(footer);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    lucide.createIcons();
+
+    // Animate in
+    setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
+    }, 50);
+}
+
+window.closeAiModal = function(modalId) {
+    const overlay = document.getElementById(modalId);
+    if (!overlay) return;
+    const card = overlay.querySelector('div');
+    overlay.classList.add('opacity-0');
+    if (card) { card.classList.remove('scale-100'); card.classList.add('scale-95'); }
+    setTimeout(() => { if (overlay) overlay.remove(); }, 300);
 }
 </script>
 @endsection

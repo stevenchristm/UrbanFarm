@@ -53,72 +53,102 @@ Tugas Anda:
 Jawablah dengan gaya bahasa yang ramah dan solutif.";
 
         $userMessage = $request->input('message') ?? '';
-        $apiKey = config('services.gemini.key');
+        $groqApiKey = config('services.groq.key');
+        $geminiApiKey = env('GEMINI_API_KEY');
         $imagePath = null;
 
-        // ==== PROSES PARTS UNTUK GEMINI ====
-        $parts = [];
+        $userPrompt = "Pertanyaan user: " . ($userMessage ?: "(User mengirim gambar untuk dianalisa)");
 
-        // Jika ada gambar, simpan dan tambahkan ke parts
         if ($request->hasFile('image')) {
+            // === HYBRID: MENGGUNAKAN GEMINI UNTUK GAMBAR (VISION) ===
             $file = $request->file('image');
             $imagePath = $file->store('chats', 'public');
 
-            // Konversi ke Base64 untuk dikirim ke Google API
+            // Konversi ke Base64
             $imageData = base64_encode(file_get_contents($file->path()));
+            $parts = [];
             $parts[] = [
                 "inline_data" => [
                     "mime_type" => $file->getMimeType(),
                     "data" => $imageData
                 ]
             ];
-        }
+            $parts[] = ["text" => $systemPrompt . "\n\n" . $userPrompt];
 
-        $userPrompt = "Pertanyaan user: " . ($userMessage ?: "(User mengirim gambar untuk dianalisa)");
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" . $geminiApiKey;
 
-        $parts[] = ["text" => $systemPrompt . "\n\n" . $userPrompt];
+            try {
+                $response = Http::withoutVerifying()
+                    ->withHeaders(['Content-Type' => 'application/json'])
+                    ->timeout(60)
+                    ->retry(3, 100)
+                    ->post($url, [
+                        "contents" => [
+                            ["parts" => $parts]
+                        ]
+                    ]);
 
-        // Gunakan gemini-flash-latest (model multimodal)
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $apiKey;
-
-        try {
-            $response = Http::withoutVerifying() // Penting untuk localhost
-                ->withHeaders(['Content-Type' => 'application/json'])
-                ->timeout(60) // Tambahkan timeout menjadi 60 detik
-                ->retry(3, 100) // Mencoba kembali 3 kali jika server sibuk (Error 503/500)
-                ->post($url, [
-                    "contents" => [
-                        ["parts" => $parts]
-                    ]
-                ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $aiReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? 'Maaf, respons kosong.';
-
-                // Simpan ke database
-                Chat::create([
-                    'user_id' => Auth::id(),
-                    'message' => $userMessage,
-                    'image' => $imagePath,
-                    'response' => $aiReply
-                ]);
-
-                return response()->json(['response' => $aiReply]);
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $aiReply = $data['candidates'][0]['content']['parts'][0]['text'] ?? 'Maaf, respons kosong.';
+                } else {
+                    return response()->json(['response' => "Error dari Google Gemini: " . $response->body()], 500);
+                }
+            } catch (\Exception $e) {
+                $errorMessage = $e->getMessage();
+                if (str_contains(strtolower($errorMessage), 'timed out') || str_contains(strtolower($errorMessage), 'timeout')) {
+                    $errorMessage = "Koneksi ke Google Gemini API terputus (Timeout). Silakan ulangi.";
+                }
+                return response()->json(['response' => "Error Sistem: " . $errorMessage], 500);
             }
 
-            return response()->json(['response' => "Error dari Google: " . $response->body()], 500);
+        } else {
+            // === HYBRID: MENGGUNAKAN GROQ UNTUK TEKS SAJA ===
+            $messages = [
+                ["role" => "system", "content" => $systemPrompt],
+                ["role" => "user", "content" => $userPrompt]
+            ];
 
-        } catch (\Exception $e) {
-            $errorMessage = $e->getMessage();
-            
-            // Cek jika error karena timeout
-            if (str_contains(strtolower($errorMessage), 'timed out') || str_contains(strtolower($errorMessage), 'timeout')) {
-                $errorMessage = "Koneksi ke Google Gemini API terputus (Timeout). Secara default, sistem menunggu selama 30 detik, namun terkadang AI membutuhkan waktu lebih lama untuk memproses jawaban atau karena gangguan jaringan. Silakan ulangi pertanyaan Anda.";
+            $url = "https://api.groq.com/openai/v1/chat/completions";
+
+            try {
+                $response = Http::withoutVerifying()
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $groqApiKey
+                    ])
+                    ->timeout(60)
+                    ->retry(3, 100)
+                    ->post($url, [
+                        "model" => "llama-3.3-70b-versatile",
+                        "messages" => $messages,
+                        "temperature" => 0.6
+                    ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $aiReply = $data['choices'][0]['message']['content'] ?? 'Maaf, respons kosong.';
+                } else {
+                    return response()->json(['response' => "Error dari Groq AI: " . $response->body()], 500);
+                }
+            } catch (\Exception $e) {
+                $errorMessage = $e->getMessage();
+                if (str_contains(strtolower($errorMessage), 'timed out') || str_contains(strtolower($errorMessage), 'timeout')) {
+                    $errorMessage = "Koneksi ke Groq API terputus (Timeout). Silakan ulangi.";
+                }
+                return response()->json(['response' => "Error Sistem: " . $errorMessage], 500);
             }
-
-            return response()->json(['response' => "Error Sistem: " . $errorMessage], 500);
         }
+
+        // Simpan ke database
+        Chat::create([
+            'user_id' => Auth::id(),
+            'message' => $userMessage,
+            'image' => $imagePath,
+            'response' => $aiReply
+        ]);
+
+        return response()->json(['response' => $aiReply]);
     }
 
     /**

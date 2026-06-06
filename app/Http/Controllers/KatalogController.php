@@ -71,7 +71,7 @@ class KatalogController extends Controller
 
         try {
             $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60*24*30, function() use ($tanaman) {
-                $geminiKey = config('services.gemini.key');
+                $groqKey = config('services.groq.key');
                 $prompt = "Buatkan siklus hidup (lifecycle) yang akurat dan realistis untuk tanaman {$tanaman->nama_tanaman}. 
                 Format WAJIB JSON persis seperti ini:
                 {
@@ -86,20 +86,25 @@ class KatalogController extends Controller
                 }
                 Hanya kembalikan JSON object murni tanpa markdown blocks.";
 
-                $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" . $geminiKey;
+                $url = "https://api.groq.com/openai/v1/chat/completions";
 
                 $response = Http::withoutVerifying()
-                    ->withHeaders(['Content-Type' => 'application/json'])
+                    ->withHeaders([
+                        'Content-Type' => 'application/json',
+                        'Authorization' => 'Bearer ' . $groqKey
+                    ])
                     ->timeout(60)
                     ->post($url, [
-                        "contents" => [
-                            ["parts" => [["text" => $prompt]]]
-                        ]
+                        "model" => "llama-3.3-70b-versatile",
+                        "messages" => [
+                            ["role" => "user", "content" => $prompt]
+                        ],
+                        "temperature" => 0.5
                     ]);
 
                 if ($response->successful()) {
                     $result = $response->json();
-                    $aiText = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                    $aiText = $result['choices'][0]['message']['content'] ?? '';
                     $jsonText = preg_replace('/```json\s*|```/', '', $aiText);
                     $decoded = json_decode(trim($jsonText), true);
                     

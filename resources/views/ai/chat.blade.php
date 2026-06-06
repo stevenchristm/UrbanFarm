@@ -243,8 +243,8 @@
                 <i data-lucide="brain-circuit" class="w-8 h-8 text-emerald-600"></i>
             </div>
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Pakar Botani AI</h1>
-                <p class="text-slate-500 font-medium text-sm">Konsultasi cerdas mengenai kesehatan tanaman, cuaca, dan strategi budidaya.</p>
+                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">{{ \App\Models\Setting::where('key','ai_title')->value('value') ?? 'Pakar Botani AI' }}</h1>
+                <p class="text-slate-500 font-medium text-sm">{{ \App\Models\Setting::where('key','ai_subtitle')->value('value') ?? 'Konsultasi cerdas mengenai kesehatan tanaman, cuaca, dan strategi budidaya.' }}</p>
             </div>
         </div>
         <button onclick="clearChat()" class="flex items-center gap-2 px-5 py-2.5 bg-white/50 hover:bg-white backdrop-blur-md border border-slate-200 text-slate-600 hover:text-red-500 rounded-xl transition-all duration-300 font-bold shadow-sm group">

@@ -10,7 +10,7 @@
         <h1 class="text-3xl font-display font-bold tracking-tight text-foreground mb-2">
             Halo, {{ Auth::user()->nama ?? Auth::user()->name }} <span class="wave">👋</span>
         </h1>
-        <p class="text-muted-foreground">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }} · Pusat kendali ekosistem urban Anda aktif.</p>
+        <p class="text-muted-foreground">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }} · {{ \App\Models\Setting::where('key','dashboard_subtitle')->value('value') ?? 'Pusat kendali ekosistem urban Anda aktif.' }}</p>
     </div>
 
     <!-- Station Capsule -->

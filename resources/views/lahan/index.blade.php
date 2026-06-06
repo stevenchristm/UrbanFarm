@@ -138,9 +138,11 @@
             <div class="p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
                 <i data-lucide="map" class="w-8 h-8 md:w-10 md:h-10 text-emerald-600"></i>
             </div>
-            Area Lahan Strategis
+            {{ \App\Models\Setting::where('key','lahan_title')->value('value') ?? 'Area Lahan Strategis' }}
         </h1>
-        <p class="text-slate-500 font-medium text-lg max-w-2xl">Pusat kendali pintar. Kelola dan pantau seluruh parameter lingkungan agrikultur Anda secara presisi tinggi.</p>
+        <p class="text-slate-500 font-medium text-lg max-w-2xl">
+            {{ \App\Models\Setting::where('key','lahan_subtitle')->value('value') ?? 'Pusat kendali pintar. Kelola dan pantau seluruh parameter lingkungan agrikultur Anda secara presisi tinggi.' }}
+        </p>
     </div>
 
     <!-- Feedback Messages -->

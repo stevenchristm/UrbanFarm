@@ -103,9 +103,9 @@
             <div class="p-3 bg-white/40 backdrop-blur-md rounded-2xl shadow-sm border border-white/50">
                 <i data-lucide="book-open" class="w-8 h-8 md:w-10 md:h-10 text-emerald-600"></i>
             </div>
-            Eksplorasi Biodiversitas
+            {{ \App\Models\Setting::where('key','katalog_title')->value('value') ?? 'Eksplorasi Biodiversitas' }}
         </h1>
-        <p class="text-slate-500 font-medium text-lg max-w-2xl">Pelajari karakteristik dan siklus spesifik tanaman pangan untuk mengoptimalkan hasil panen Anda bersama asisten AI.</p>
+        <p class="text-slate-500 font-medium text-lg max-w-2xl">{{ \App\Models\Setting::where('key','katalog_subtitle')->value('value') ?? 'Pelajari karakteristik dan siklus spesifik tanaman pangan untuk mengoptimalkan hasil panen Anda bersama asisten AI.' }}</p>
     </div>
 
     <!-- Grid -->
@@ -205,7 +205,7 @@
         
         <div id="aiModalBody" class="min-h-[200px] flex flex-col items-center justify-center">
             <i data-lucide="loader-2" class="w-10 h-10 text-emerald-500 animate-spin mb-4"></i>
-            <p class="text-slate-500 font-bold text-center">Gemini AI sedang menyusun siklus realistis...</p>
+            <p class="text-slate-500 font-bold text-center">Groq AI sedang menyusun siklus realistis...</p>
         </div>
     </div>
 </div>
@@ -245,7 +245,7 @@
         document.getElementById('aiModalBody').innerHTML = `
             <div class="h-40 flex flex-col items-center justify-center">
                 <i data-lucide="loader-2" class="w-10 h-10 text-emerald-500 animate-spin mb-4"></i>
-                <p class="text-slate-500 font-bold text-center">Gemini AI sedang menyusun siklus agronomis...</p>
+                <p class="text-slate-500 font-bold text-center">Groq AI sedang menyusun siklus agronomis...</p>
             </div>
         `;
         lucide.createIcons();
