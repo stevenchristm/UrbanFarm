@@ -149,13 +149,18 @@
     @auth
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (window.Echo) {
-                const userId = {{ Auth::id() }};
-                window.Echo.private('App.Models.User.' + userId)
-                    .listen('TaskNotification', (e) => {
-                        showGlobalToast(e.title, e.message, e.actionUrl);
-                    });
+            function initGlobalEcho() {
+                if (window.Echo) {
+                    const userId = {{ Auth::id() }};
+                    window.Echo.private('App.Models.User.' + userId)
+                        .listen('TaskNotification', (e) => {
+                            showGlobalToast(e.title, e.message, e.actionUrl);
+                        });
+                } else {
+                    setTimeout(initGlobalEcho, 100);
+                }
             }
+            initGlobalEcho();
 
             function showGlobalToast(title, message, url) {
                 const toastId = 'toast-' + Math.random().toString(36).substr(2, 9);

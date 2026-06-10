@@ -12,19 +12,20 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat User & Lahan Contoh
-        $user = User::create([
-            'nama' => 'budi',
-            'email' => 'budi123@gmail.com',
-            'password' => Hash::make('password123'),
-        ]);
-
+        $user = User::firstOrCreate(
+            ['email' => 'budi123@gmail.com'],
+            [
+                'nama' => 'budi',
+                'password' => Hash::make('password123'),
+            ]
+        );
         Space::create([
             'id_user' => $user->id_user,
             'nama_lahan' => 'Kebun Belakang',
             'luas_lahan' => 50,
             'suhu_lahan' => 28,
             'cahaya_lahan' => 8,
+            'lokasi_lahan' => 'Belakang',
         ]);
 
         // 2. Proses Import CSV

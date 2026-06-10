@@ -512,22 +512,27 @@
         });
 
         // Laravel Echo listening
-        if (window.Echo) {
-            window.Echo.channel('community-chat')
-                .listen('MessageSent', (e) => {
-                    // Ignore if it's our own message because we already appended it optimistically
-                    if (e.message.user_id !== userId) {
-                        appendMessage(e.message);
-                        if (!chatbox.hasClass('closed')) {
-                            scrollToBottom();
-                        } else {
-                            // Optional: add a notification badge on the toggle button
-                            chatToggleBtn.addClass('animate-bounce');
-                            setTimeout(() => chatToggleBtn.removeClass('animate-bounce'), 3000);
+        function initChatEcho() {
+            if (window.Echo) {
+                window.Echo.channel('community-chat')
+                    .listen('MessageSent', (e) => {
+                        // Ignore if it's our own message because we already appended it optimistically
+                        if (e.message.user_id !== userId) {
+                            appendMessage(e.message);
+                            if (!chatbox.hasClass('closed')) {
+                                scrollToBottom();
+                            } else {
+                                // Optional: add a notification badge on the toggle button
+                                chatToggleBtn.addClass('animate-bounce');
+                                setTimeout(() => chatToggleBtn.removeClass('animate-bounce'), 3000);
+                            }
                         }
-                    }
-                });
+                    });
+            } else {
+                setTimeout(initChatEcho, 100);
+            }
         }
+        initChatEcho();
     });
 </script>
 @endsection
